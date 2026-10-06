@@ -240,14 +240,20 @@ export class PatternStorageService {
   async storePatternEmbedding(embedding: PatternEmbedding): Promise<void> {
     const sql = `
       INSERT OR REPLACE INTO pattern_embeddings
-      (pattern_id, embedding, model)
-      VALUES (?, ?, ?)
+      (pattern_id, embedding, model, strategy, dimensions)
+      VALUES (?, ?, ?, ?, ?)
     `;
 
     // Convert embedding array to format expected by sqlite-vec
     const embeddingStr = JSON.stringify(embedding.embedding);
 
-     this.db.execute(sql, [embedding.pattern_id, embeddingStr, embedding.model]);
+     this.db.execute(sql, [
+       embedding.pattern_id,
+       embeddingStr,
+       embedding.model,
+       'dense',
+       embedding.embedding.length,
+     ]);
      await Promise.resolve(); // Dummy await to satisfy require-await
    }
 

@@ -12,7 +12,18 @@ export default defineConfig({
     slowTestThreshold: 10000,
     coverage: {
       reporter: ['text', 'json', 'html'],
-      exclude: ['node_modules/', 'dist/', 'tests/', 'backup/'],
+      // Scope coverage to the actual library source. Root-level manual test
+      // scripts, build/config scripts, and generated output are not library
+      // code and shouldn't count against the coverage ratio.
+      include: ['src/**/*.ts'],
+      exclude: [
+        'node_modules/',
+        'dist/',
+        'tests/',
+        'backup/',
+        'scripts/',
+        'src/**/*.d.ts',
+      ],
       thresholds: {
         lines: 50,
         functions: 50,

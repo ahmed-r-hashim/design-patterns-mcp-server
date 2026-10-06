@@ -41,6 +41,7 @@ import { formatHealthReportText } from './mcp/health-formatter.js';
 import { startHttpServer } from './mcp/http-transport.js';
 import type { PatternRow, PatternImplementation, CountResult } from './mcp/types.js';
 import { resolvePatternsPath } from './core/path-resolver.js';
+import { pathToFileURL } from 'node:url';
 import { HealthCheckService } from './health/health-check-service.js';
 import { HealthStatus } from './health/types.js';
 import { DatabaseHealthCheck } from './health/database-health-check.js';
@@ -737,8 +738,11 @@ async function main(): Promise<void> {
   });
 }
 
-// Run if this is the main module
-if (import.meta.url === `file://${process.argv[1]}`) {
+// Run if this is the main module. Compares resolved file:// URLs rather than
+// doing a naive string concatenation, which never matches on Windows because
+// process.argv[1] uses backslashes and lacks the file:// URL's leading slash
+// before the drive letter.
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   main().catch(error => {
     logger.error(
       'main',

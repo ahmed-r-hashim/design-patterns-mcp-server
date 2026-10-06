@@ -27,6 +27,10 @@ interface DatabaseResult {
   changes?: number;
 }
 
+function isInMemoryFilename(filename: string): boolean {
+  return filename.startsWith(':memory:');
+}
+
 export class DatabaseManager {
   private db: Database | null = null;
   private SQL: SqlJsStatic | null = null;
@@ -47,8 +51,10 @@ export class DatabaseManager {
       // Initialize sql.js
       this.SQL = await initSqlJs();
 
+      const isInMemory = isInMemoryFilename(this.config.filename);
+
       // Ensure database directory exists (skip for in-memory databases)
-      if (this.config.filename !== ':memory:') {
+      if (!isInMemory) {
         const dbDir = path.dirname(this.config.filename);
         if (dbDir && !fs.existsSync(dbDir)) {
           fs.mkdirSync(dbDir, { recursive: true });
@@ -57,7 +63,7 @@ export class DatabaseManager {
 
       // For in-memory databases, skip file operations
       let dbData: Uint8Array | undefined;
-      if (this.config.filename !== ':memory:') {
+      if (!isInMemory) {
         // Try to load existing database file
         if (fs.existsSync(this.config.filename)) {
           dbData = new Uint8Array(fs.readFileSync(this.config.filename));
@@ -66,7 +72,7 @@ export class DatabaseManager {
 
       // Create database connection
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-      this.db = this.config.filename === ':memory:'
+      this.db = isInMemory
         ? new this.SQL.Database()
         : new this.SQL.Database(dbData);
 
@@ -101,8 +107,12 @@ export class DatabaseManager {
         this.statementPool.clear();
         logger.info('database-manager', 'Statement pool cleared');
 
-        // Export database to file before closing (only if not readonly and path exists)
-        if (this.config.filename && !(this.config.options?.readonly ?? false)) {
+        // Export database to file before closing (only if not readonly, not in-memory, and path exists)
+        if (
+          this.config.filename &&
+          !isInMemoryFilename(this.config.filename) &&
+          !(this.config.options?.readonly ?? false)
+        ) {
           const dbDir = path.dirname(this.config.filename);
           if (!fs.existsSync(dbDir)) {
             await fs.promises.mkdir(dbDir, { recursive: true });

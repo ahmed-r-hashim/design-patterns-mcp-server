@@ -34,6 +34,20 @@ export function startHttpServer(options: HttpTransportOptions): Promise<void> {
     options.healthCache ??
     createHealthCache({ ttlMs: options.healthCacheTtlMs } as HealthCacheOptions);
 
+  // The shared mcpServer's underlying Protocol only supports a single connected
+  // transport at a time (connect() throws if already connected). Since Bun.serve
+  // can invoke fetch() concurrently for overlapping requests, serialize the
+  // connect -> handleRequest -> close lifecycle through this queue.
+  let mcpRequestQueue: Promise<unknown> = Promise.resolve();
+  function withMcpServerLock<T>(task: () => Promise<T>): Promise<T> {
+    const result = mcpRequestQueue.then(task, task);
+    mcpRequestQueue = result.then(
+      () => undefined,
+      () => undefined
+    );
+    return result;
+  }
+
   Bun.serve({
     hostname,
     port,
@@ -87,8 +101,19 @@ export function startHttpServer(options: HttpTransportOptions): Promise<void> {
           enableJsonResponse: true,
         });
 
-        await mcpServer.connect(transport);
-        return runWithClientKey(clientKey, () => transport.handleRequest(req));
+        // Stateless mode: the shared mcpServer's Protocol only tolerates a single
+        // connected transport at a time, so requests are serialized and the
+        // transport is disconnected again once each request/response cycle
+        // completes - otherwise connect() throws "Already connected to a
+        // transport" for overlapping or back-to-back requests.
+        return withMcpServerLock(async () => {
+          await mcpServer.connect(transport);
+          try {
+            return await runWithClientKey(clientKey, () => transport.handleRequest(req));
+          } finally {
+            await transport.close();
+          }
+        });
       }
 
       return new Response('Not Found', { status: 404 });
