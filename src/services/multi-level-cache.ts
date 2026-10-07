@@ -173,7 +173,7 @@ export class MultiLevelCache implements AsyncCacheServiceInterface {
       } catch {
         try {
           const ioredisModule = await import('ioredis');
-          Redis = ioredisModule.default as unknown as new (opts: unknown) => unknown;
+          Redis = ioredisModule.default;
         } catch {
           return;
         }

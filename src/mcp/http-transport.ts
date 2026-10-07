@@ -32,7 +32,7 @@ export function startHttpServer(options: HttpTransportOptions): Promise<void> {
       : undefined;
   const healthCache: HealthCache =
     options.healthCache ??
-    createHealthCache({ ttlMs: options.healthCacheTtlMs } as HealthCacheOptions);
+    createHealthCache({ ttlMs: options.healthCacheTtlMs });
 
   // The shared mcpServer's underlying Protocol only supports a single connected
   // transport at a time (connect() throws if already connected). Since Bun.serve

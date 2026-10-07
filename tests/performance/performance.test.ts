@@ -308,6 +308,20 @@ describe('Performance Tests', () => {
       'Need to communicate between objects efficiently',
     ];
 
+    beforeAll(async () => {
+      // Warm up the embedding pipeline so the first timed query below doesn't
+      // get charged for one-time model load latency (can take several seconds
+      // on a cold worker process, independent of actual query performance).
+      // Scoped here (not the top-level beforeAll) so it doesn't inflate heap
+      // usage measured by the earlier System Resource Tests.
+      await patternMatcher.findMatchingPatterns({
+        id: 'warmup',
+        query: 'warm up embedding pipeline',
+        maxResults: 1,
+        programmingLanguage: 'typescript',
+      });
+    });
+
     it('should respond to pattern matching queries within time limits', async () => {
       for (const query of testQueries) {
         const startTime = performance.now();

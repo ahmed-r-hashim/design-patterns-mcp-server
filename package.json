@@ -47,7 +47,7 @@
     "lint": "eslint src/**/*.ts tests/**/*.ts",
     "lint:fix": "eslint src/**/*.ts tests/**/*.ts --fix",
     "typecheck": "tsc --noEmit",
-    "db:setup": "bun run build && bun run migrate && bun run seed && bun run generate-embeddings && bun run setup-relationships && rm :memory:* 2>/dev/null || true",
+    "db:setup": "bun run build && bun run migrate && bun run seed && bun run generate-embeddings && bun run setup-relationships",
     "migrate": "bun run build && bun dist/cli/migrate.js",
     "seed": "bun run build && bun dist/cli/seed.js",
     "setup-relationships": "bun run build && bun dist/cli/setup-relationships.js",
@@ -139,20 +139,20 @@
     ]
   },
   "dependencies": {
+    "@huggingface/transformers": "^4.3.1",
     "@modelcontextprotocol/sdk": "^1.31.0",
-    "@xenova/transformers": "^2.17.2",
     "sql.js": "^1.14.2"
   },
   "devDependencies": {
-    "@types/node": "^20.0.0",
+    "@types/node": "^22.20.4",
     "@types/sql.js": "^1.4.11",
     "@typescript-eslint/eslint-plugin": "^8.71.0",
     "@typescript-eslint/parser": "^8.71.0",
-    "@vitest/coverage-v8": "^3.2.7",
+    "@vitest/coverage-v8": "^5.0.3",
     "bun-types": "^1.2.21",
     "rimraf": "^6.0.1",
     "eslint": "^8.0.0",
     "typescript": "^5.3.0",
-    "vitest": "^3.2.7"
+    "vitest": "^5.0.3"
   }
 }

@@ -28,7 +28,7 @@ describe('migrations module public exports', () => {
   });
 
   it('exposes MigrationOptions at compile time', () => {
-    const _type: MigrationOptions = {} as MigrationOptions;
+    const _type: MigrationOptions = {};
     expect(_type).toBeDefined();
   });
 
@@ -55,7 +55,7 @@ describe('migrations module public exports', () => {
   it('exposes additional types in migrations/types.ts for module completeness', () => {
     const _a: MigrationRecord = {} as MigrationRecord;
     const _b: MigrationFailure = {} as MigrationFailure;
-    const _c: ChecksumResolutionOptions = {} as ChecksumResolutionOptions;
+    const _c: ChecksumResolutionOptions = {};
     const _d: ResolutionResult = {} as ResolutionResult;
     const _e: DryRunMigrationResult = {} as DryRunMigrationResult;
     const _f: DryRunResult = {} as DryRunResult;

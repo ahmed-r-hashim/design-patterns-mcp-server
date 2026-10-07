@@ -186,8 +186,8 @@ export class TransformersEmbeddingStrategy implements EmbeddingStrategy {
     if (this.isInitialized) return;
 
     try {
-      // Dynamic import to avoid issues if @xenova/transformers is not installed
-      const transformersModule = await import('@xenova/transformers').catch(() => null);
+      // Dynamic import to avoid issues if @huggingface/transformers is not installed
+      const transformersModule = await import('@huggingface/transformers').catch(() => null);
 
       if (transformersModule) {
         this.pipeline = await transformersModule.pipeline(

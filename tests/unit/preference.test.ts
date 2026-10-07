@@ -24,7 +24,7 @@ describe('UserPreference Model', () => {
       resetAll: vi.fn(),
       export: vi.fn(),
       import: vi.fn()
-    } as unknown as Mocked<PreferenceManager>;
+    };
   });
 
   describe('UserPreference Interface', () => {

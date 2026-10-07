@@ -1,8 +1,8 @@
 /**
- * Type definitions for @xenova/transformers (optional dependency)
+ * Type definitions for @huggingface/transformers (optional dependency)
  */
 
-declare module '@xenova/transformers' {
+declare module '@huggingface/transformers' {
   export interface PipelineOptions {
     quantized?: boolean;
     progress_callback?: (progress: { status: string; progress?: number }) => void;

@@ -29,7 +29,7 @@ describe('MCP Server Integration Tests', () => {
       enableLLM: false,
       maxConcurrentRequests: 10,
     };
-    server = createDesignPatternsServer(config) as MCPServerInstance;
+    server = createDesignPatternsServer(config);
     expect(server).toBeDefined();
     expect(server).toBeInstanceOf(Object);
   });

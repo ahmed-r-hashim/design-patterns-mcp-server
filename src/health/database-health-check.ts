@@ -122,8 +122,7 @@ export class DatabaseHealthCheck implements HealthCheck {
   private testPerformance(): { duration: number; queryCount: number; message: string } {
     const testQueries = [
       'SELECT COUNT(*) as pattern_count FROM patterns',
-      'SELECT COUNT(*) as relationship_count FROM relationships',
-      'SELECT COUNT(*) as vector_count FROM vectors WHERE pattern_id IS NOT NULL LIMIT 10'
+      'SELECT COUNT(*) as relationship_count FROM pattern_relationships'
     ];
 
     const results: number[] = [];

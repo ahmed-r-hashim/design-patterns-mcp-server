@@ -7,10 +7,15 @@ import type { Logger } from '../../src/services/logger.js';
 
 const handleRequestMock = vi.fn().mockResolvedValue(new Response('ok'));
 
+const closeMock = vi.fn().mockResolvedValue(undefined);
+
 vi.mock('@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js', () => ({
-  WebStandardStreamableHTTPServerTransport: vi.fn().mockImplementation(() => ({
-    handleRequest: handleRequestMock,
-  })),
+  WebStandardStreamableHTTPServerTransport: vi.fn().mockImplementation(function () {
+    return {
+      handleRequest: handleRequestMock,
+      close: closeMock,
+    };
+  }),
 }));
 
 function buildReport(overall: HealthStatus): HealthReport {
@@ -36,6 +41,7 @@ describe('startHttpServer (Bun fetch handler)', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
     handleRequestMock.mockClear();
+    closeMock.mockClear();
   });
 
   async function startAndCaptureFetch(options: Parameters<typeof import('../../src/mcp/http-transport.js').startHttpServer>[0]) {

@@ -47,7 +47,7 @@ function buildRecommendation(overrides: Partial<PatternRecommendation> = {}): Pa
       technologyFit: { fitScore: 0.8, reasons: [] },
     },
     ...overrides,
-  } as PatternRecommendation;
+  };
 }
 
 describe('createHttpToolHandlers', () => {
