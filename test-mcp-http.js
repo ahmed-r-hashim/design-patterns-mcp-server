@@ -17,10 +17,7 @@ async function main() {
     version: '1.0.0'
   });
 
-  const transport = new StreamableHTTPClientTransport({
-    url: SERVER_URL,
-    sessionId: `test-${Math.random().toString(36).slice(2)}`
-  });
+  const transport = new StreamableHTTPClientTransport(new URL(SERVER_URL));
 
   try {
     await client.connect(transport);

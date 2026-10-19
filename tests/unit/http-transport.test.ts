@@ -1,3 +1,5 @@
+import type { AddressInfo } from 'node:net';
+import type { Server as HttpServer, ServerResponse } from 'node:http';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { MCPServerConfigBuilder } from '../../src/core/config-builder.js';
@@ -5,12 +7,16 @@ import { HealthStatus, type HealthReport } from '../../src/health/types.js';
 import { createHealthCache } from '../../src/mcp/health-cache.js';
 import type { Logger } from '../../src/services/logger.js';
 
-const handleRequestMock = vi.fn().mockResolvedValue(new Response('ok'));
+const handleRequestMock = vi.fn().mockImplementation((_req: unknown, res: ServerResponse) => {
+  res.statusCode = 200;
+  res.end('ok');
+  return Promise.resolve();
+});
 
 const closeMock = vi.fn().mockResolvedValue(undefined);
 
-vi.mock('@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js', () => ({
-  WebStandardStreamableHTTPServerTransport: vi.fn().mockImplementation(function () {
+vi.mock('@modelcontextprotocol/sdk/server/streamableHttp.js', () => ({
+  StreamableHTTPServerTransport: vi.fn().mockImplementation(function () {
     return {
       handleRequest: handleRequestMock,
       close: closeMock,
@@ -37,23 +43,35 @@ function buildLogger(): Logger {
   } as unknown as Logger;
 }
 
-describe('startHttpServer (Bun fetch handler)', () => {
-  afterEach(() => {
-    vi.unstubAllGlobals();
+describe('createHttpApp (Express)', () => {
+  const servers: HttpServer[] = [];
+
+  afterEach(async () => {
+    await Promise.all(
+      servers.splice(0).map(
+        server => new Promise<void>(resolve => server.close(() => resolve()))
+      )
+    );
     handleRequestMock.mockClear();
     closeMock.mockClear();
   });
 
-  async function startAndCaptureFetch(options: Parameters<typeof import('../../src/mcp/http-transport.js').startHttpServer>[0]) {
-    const serveMock = vi.fn().mockReturnValue({ stop: vi.fn() });
-    vi.stubGlobal('Bun', { serve: serveMock });
-
-    const { startHttpServer } = await import('../../src/mcp/http-transport.js');
-    await startHttpServer(options);
-
-    expect(serveMock).toHaveBeenCalledTimes(1);
-    const serveOptions = serveMock.mock.calls[0][0] as { fetch: (req: Request) => Promise<Response> };
-    return serveOptions.fetch;
+  async function startAndCaptureFetch(options: Parameters<typeof import('../../src/mcp/http-transport.js').createHttpApp>[0]) {
+    const { createHttpApp } = await import('../../src/mcp/http-transport.js');
+    const app = createHttpApp(options);
+    const server = await new Promise<HttpServer>(resolve => {
+      const s = app.listen(0, '127.0.0.1', () => resolve(s));
+    });
+    servers.push(server);
+    const { port } = server.address() as AddressInfo;
+    return (input: string | Request): Promise<Response> => {
+      const req = typeof input === 'string' ? new Request(input) : input;
+      const url = new URL(req.url);
+      return fetch(`http://127.0.0.1:${port}${url.pathname}${url.search}`, {
+        method: req.method,
+        headers: req.headers,
+      });
+    };
   }
 
   it('returns the cached health report without invoking checkAll again', async () => {
@@ -166,6 +184,23 @@ describe('startHttpServer (Bun fetch handler)', () => {
     expect(connect).toHaveBeenCalledTimes(1);
     expect(handleRequestMock).toHaveBeenCalledTimes(1);
     expect(response.status).toBe(200);
+  });
+
+  it('returns 405 for non-POST mcp requests without touching the shared server', async () => {
+    const config = MCPServerConfigBuilder.fromEnvironment().build();
+    const connect = vi.fn().mockResolvedValue(undefined);
+
+    const fetch = await startAndCaptureFetch({
+      config,
+      mcpServer: { connect } as unknown as Server,
+      logger: buildLogger(),
+    });
+
+    const response = await fetch(new Request('http://localhost/mcp', { method: 'GET' }));
+    expect(response.status).toBe(405);
+    expect(response.headers.get('allow')).toBe('POST');
+    expect(connect).not.toHaveBeenCalled();
+    expect(handleRequestMock).not.toHaveBeenCalled();
   });
 
   it('returns 404 for unknown paths', async () => {
